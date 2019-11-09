@@ -14,4 +14,8 @@
     <string name="_2019_brian_k_erik_f"><![CDATA[2019 Brian K. & Erik F.]]></string>
     <string name="outdated_device">OutDated Device</string>
     <string name="_1500hz">1500hz</string>
+    <string name="slide_to_unlock_screen"><![CDATA[-- slide to unlock screen -->]]></string>
+    <string name="slide_to_lock_screen"><![CDATA[<-- slide to lock screen --]]></string>
+    <string name="help">help</string>
+    <string name="_2019_brian_k_and_erik_f">2019: Brian K. and Erik F.</string>
 </resources>

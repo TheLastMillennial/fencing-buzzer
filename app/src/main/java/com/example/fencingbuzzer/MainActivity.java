@@ -9,25 +9,24 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.MediaPlayer;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Vibrator;
-import android.provider.MediaStore;
+import android.text.Html;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
-
-import org.w3c.dom.Text;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,31 +35,54 @@ public class MainActivity extends AppCompatActivity {
 
     boolean epeeMode=false;
     boolean headphonesOutput=true;
+    boolean legacyBeep=false;
+    boolean unlocked=true;
+    boolean soundPlayed=false;
+    boolean passed=false;
     int bladeType=0;//0=epee,1=foil
 
-    private TextView textView;
-    private ProgressBar progressBar;
-    private SeekBar seekBar;
+    private TextView hzText,bladeBtn,audioBtn,beepBtn,slideToUnlockText,creditsText;
+    private Button helpBtn,beepButton;
+    private SeekBar hzSeek,slideToUnlockSlider;
+    private Spanned githubLink;
 
     private final double duration = .3; // seconds
     private final int sampleRate = 8000;
     private final double numSamples = duration * sampleRate;
     private final double sample[] = new double[(int)numSamples];
-    public double freqOfTone = 1500; // hz
+    private double freqOfTone = 1500; // hz
+    private int prevProgress=10;
 
     private final byte generatedSnd[] = new byte[2 * (int)numSamples];
 
     Handler handler = new Handler();
 
 
+    //KINDA LIKE THE MAIN
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //assets on screen
+        creditsText = (TextView)findViewById(R.id.creditsTextView);
+        hzText =(TextView)findViewById(R.id.hzTextView);
+        hzSeek = (SeekBar) findViewById(R.id.hzSeekBar);
+        slideToUnlockSlider = (SeekBar) findViewById(R.id.slideToUnlockSlider);
+        slideToUnlockText = (TextView)findViewById(R.id.slideToUnlockText);
+        bladeBtn=(Button) findViewById(R.id.bladeTypeToggle);
+        audioBtn=(Button) findViewById(R.id.AudioOutputToggle);
+        beepBtn=(Button) findViewById(R.id.beepButton);
+        helpBtn=(Button) findViewById(R.id.helpButton);
+        beepButton=(Button) findViewById(R.id.beepButton);
+
+        //hyperlink to github
+        githubLink = Html.fromHtml("<a href='https://github.com/TheLastMillennial/fencing-buzzer/tree/master'>©2019: Brian K. & Erik F.</a>");
+        creditsText.setMovementMethod(LinkMovementMethod.getInstance());
+        creditsText.setText(githubLink);
+
         //the only button on the screen sets off the beeping noise.
         //https://youtu.be/dFlPARW5IX8?t=22m12s
-        Button beepButton=(Button) findViewById(R.id.beepButton);
         beepButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -69,14 +91,48 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        textView=(TextView)findViewById(R.id.hzTextView);
-        seekBar = (SeekBar) findViewById(R.id.hzSeekBar);
+        helpBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setCancelable(true);
+                builder.setTitle("Help:");
+                builder.setMessage(
+                        "There are three buttons on the bottom of the screen. \n" +
+                        " - The right button plays a test beep.\n" +
+                        " - The middle button changes the audio output for the beep. \n" +
+                        "    * Headphones mode will make the device send audio through the headphone jack. Please be aware that you must plug headphones into the passthrough port on the adapter to hear audio in this mode!\n" +
+                        "    * Speakers mode will force the device to send audio through the built in speakers. Please not that this is NOT COMPATIBLE with Android 4 and Android 5!\n" +
+                        " - The button on the left changes which blade is being used and will change the beep behavior accordingly.\n" +
+                        "\n" +
+                        "There are two sliders.\n" +
+                        " - The top slider 'locks' the screen by removing all clickable buttons and preventing phone from sleeping.\n" +
+                        " - The bottom slider adjusts the tone of the beep.");
+                builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                builder.show();
 
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            }
+        });
+
+        slideToUnlockSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                freqOfTone=progress;
-                textView.setText(""+progress+"hz");
+                //makes sure user is sliding rather than just tapping the slider
+                if (!(progress+1 == prevProgress || progress -1 == prevProgress))
+                    progress=prevProgress;
+                prevProgress=progress;
+                slideToUnlockSlider.setProgress(progress);
+                //locks or unlocks screen
+                if (progress==0)
+                    unlocked=false;
+                else if(progress==slideToUnlockSlider.getMax())
+                    unlocked=true;
             }
 
             @Override
@@ -86,8 +142,63 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                genTone();
-                playSound();
+                if (unlocked){
+                    hzSeek.setVisibility(View.VISIBLE);
+                    hzText.setVisibility(View.VISIBLE);
+                    bladeBtn.setVisibility(View.VISIBLE);
+                    audioBtn.setVisibility(View.VISIBLE);
+                    beepBtn.setVisibility(View.VISIBLE);
+                    creditsText.setVisibility(View.VISIBLE);
+                    helpBtn.setVisibility(View.VISIBLE);
+                    slideToUnlockText.setText("<-- slide to lock screen -- ");
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
+                }else{
+                    hzSeek.setVisibility(View.INVISIBLE);
+                    hzText.setVisibility(View.INVISIBLE);
+                    bladeBtn.setVisibility(View.INVISIBLE);
+                    audioBtn.setVisibility(View.INVISIBLE);
+                    beepBtn.setVisibility(View.INVISIBLE);
+                    creditsText.setVisibility(View.INVISIBLE);
+                    helpBtn.setVisibility((View.INVISIBLE));
+                    slideToUnlockText.setText(" -- slide to unlock screen -->");
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                }
+            }
+        });
+
+
+
+        //for changing the tone pitch
+        hzSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                freqOfTone=progress;
+                hzText.setText(""+progress+"hz");
+                if (progress==0){
+                    legacyBeep=true;
+                    hzText.setText("Legacy Beep (Only plays through speakers)");
+                }else{
+                    legacyBeep=false;
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                //checks if user wants to play notification rather than tone
+                if(legacyBeep){
+                    playBeep();
+                }else{
+                    genTone();
+                    playSound();
+                }
+
+
+
             }
         });
 
@@ -95,17 +206,6 @@ public class MainActivity extends AppCompatActivity {
         ToggleButton bladeToggle = (ToggleButton) findViewById(R.id.bladeTypeToggle);
         bladeToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setCancelable(true);
-                builder.setTitle("Unimplemented Feature");
-                builder.setMessage("This feature has no effect right now.");
-                builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-
                 if (isChecked) {
                     // The toggle is enabled (foil mode)
                     epeeMode=!epeeMode;
@@ -120,37 +220,36 @@ public class MainActivity extends AppCompatActivity {
         final ToggleButton audioToggle = (ToggleButton) findViewById(R.id.AudioOutputToggle);
         audioToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                //checks if device can support this feature
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-                    //device is not supported, bring up popup window to tell them!
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setCancelable(true);
-                    builder.setTitle("Outdated Device!");
-                    builder.setMessage("Unfortunately, your device is outdated so this feature will have no effect. Please update to Android 6 or higher to use it.");
-                    builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    });
-                    builder.show();
-                    audioToggle.setChecked(false);
-                }else {
-                    //device can support the feature!
-                    if (isChecked) {
-                        // The toggle is enabled (speakers mode)
-
-                        headphonesOutput = !headphonesOutput;
-
+                //device can support the feature!
+                if (isChecked) {
+                    // The toggle is enabled (speakers mode)
+                    //checks if device can support this feature
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                        //device is not supported, bring up popup window to tell them!
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        builder.setCancelable(true);
+                        builder.setTitle("Outdated Device!");
+                        builder.setMessage("Unfortunately, your device is outdated so an alternative beep using your notification sound has been used instead. Please update to Android 6 or higher to continue using the tone.");
+                        builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+                        builder.show();
+                        legacyBeep = true;
                     } else {
-                        // The toggle is disabled (headphones mode)
                         headphonesOutput = !headphonesOutput;
                     }
+
+
+                } else {
+                    // The toggle is disabled (headphones mode)
+                    legacyBeep=false;
+                    headphonesOutput = !headphonesOutput;
                 }
             }
         });
-
-
     }
 
     @Override
@@ -175,12 +274,17 @@ public class MainActivity extends AppCompatActivity {
     //makes tone play 15 times
     public void loopSound(){
         for (int i=0;i<5;i++) {
-            playSound();
-            try {
-                TimeUnit.MILLISECONDS.sleep((long)(duration*1000+50));
-            }catch (Exception e){
-                e.printStackTrace();
+            //if it's a modern device, play tone, otherwise use notification sound
+            if(!legacyBeep) {
+                playSound();
             }
+            else {
+                playBeep();
+                if (i==2)
+                    break;
+
+            }
+
 
         }
     }
@@ -209,6 +313,7 @@ public class MainActivity extends AppCompatActivity {
 
     //plays a tone
     void playSound(){
+
         final AudioTrack audioTrack = new AudioTrack(
                 AudioManager.STREAM_MUSIC,
                 sampleRate,
@@ -216,14 +321,26 @@ public class MainActivity extends AppCompatActivity {
                 AudioFormat.ENCODING_PCM_16BIT,
                 generatedSnd.length,
                 AudioTrack.MODE_STATIC);
-        audioTrack.write(generatedSnd, 0, generatedSnd.length);
+        try{
+            audioTrack.write(generatedSnd, 0, generatedSnd.length);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && headphonesOutput==false) {
             AudioDeviceInfo mAudioOutputDevice = findAudioDevice(AudioManager.GET_DEVICES_OUTPUTS, AudioDeviceInfo.TYPE_BUILTIN_SPEAKER);
             audioTrack.setPreferredDevice(mAudioOutputDevice);// NOT COMPATIBLE WITH ANDROID 4!
         }
 
-        audioTrack.play();
+        try {
+            audioTrack.play();
+            TimeUnit.MILLISECONDS.sleep((long) (duration * 1000 + 50));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        audioTrack.release();
 
     }
 
@@ -250,8 +367,9 @@ public class MainActivity extends AppCompatActivity {
             TextView textViewMain = findViewById(R.id.button_state_text);
             textViewMain.setText("Closed");
             //plays beep
-            if(epeeMode==false)
+            if(epeeMode==false && soundPlayed==false)
                 loopSound();
+            soundPlayed=true;
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -266,12 +384,13 @@ public class MainActivity extends AppCompatActivity {
             //plays beep on phone
             if(epeeMode==true)
                 loopSound();
+            soundPlayed=false;
             return true;
         }
         return super.onKeyUp(keyCode, event);
     }
 
-    //makes phone beep notification UNUSED CURRENTLY
+    //makes phone beep notification LEGACY
     public void playBeep(){
 
         //https://stackoverflow.com/questions/2618182/how-to-play-ringtone-alarm-sound-in-android
