@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/button_state_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/button_state"
+        android:textSize="36sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/beepButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/beep"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/creditsTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/_2019_brian_k_erik_f"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ToggleButton
+        android:id="@+id/AudioOutputToggle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/audiotogglebutton"
+        android:textOff="@string/headphones"
+        android:textOn="@string/speakers"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/beepButton"
+        app:layout_constraintStart_toEndOf="@+id/bladeTypeToggle" />
+
+    <ToggleButton
+        android:id="@+id/bladeTypeToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/bladetogglebutton"
+        android:textOff="@string/p_e_mode"
+        android:textOn="@string/foil_mode"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/AlertTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        app:layout_constraintBottom_toTopOf="@+id/button_state_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:text="@string/outdated_device"
+        android:textAlignment="center"
+        android:textSize="25sp"
+        android:visibility="invisible"/>
+
+    <SeekBar
+        android:id="@+id/hzSeekBar"
+        style="@style/Widget.AppCompat.SeekBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
+        android:max="3000"
+        android:progress="1500"
+        app:layout_constraintBottom_toTopOf="@+id/AudioOutputToggle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/hzTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginLeft="32dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/_1500hz"
+        app:layout_constraintBottom_toTopOf="@+id/hzSeekBar"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">FencingBuzzer</string>
+    <string name="button_state">NULL</string>
+    <string name="_2019_brian_k_eric_f"><![CDATA[2019: Brian K. & Eric F.]]></string>
+    <string name="beep">Beep</string>
+    <string name="togglebutton">ToggleButton</string>
+    <string name="headphones">Headphones</string>
+    <string name="togglebutton1">ToggleButton</string>
+    <string name="p_e_mode">Épée Mode</string>
+    <string name="foil_mode">Foil Mode</string>
+    <string name="speakers">Speakers</string>
+    <string name="bladetogglebutton">bladetogglebutton</string>
+    <string name="audiotogglebutton">audiotogglebutton</string>
+    <string name="_2019_brian_k_erik_f"><![CDATA[2019 Brian K. & Erik F.]]></string>
+    <string name="outdated_device">OutDated Device</string>
+    <string name="_1500hz">1500hz</string>
+</resources>
