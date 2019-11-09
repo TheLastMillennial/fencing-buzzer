@@ -12,8 +12,9 @@ There are three buttons.
     * Speakers mode will force the device to send audio through the built in speakers. Please not that this is NOT COMPATIBLE with Android 4 and Android 5!
  - The button on the left changes which blade is being used and will change the beep behavior accordingly.
 
-There is one slider.
- - Adjusting the slider changes the tone of the beep.
+There are two sliders.
+ - The top slider 'locks' the screen by removing all clickable buttons and forcing the screen to stay on.
+ - The bottom slider adjusts the tone of the beep.
 
 
 Changelog:
