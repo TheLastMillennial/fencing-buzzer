@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -30,6 +31,8 @@ import android.widget.ToggleButton;
 
 import java.util.concurrent.TimeUnit;
 
+import static android.view.View.KEEP_SCREEN_ON;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     boolean passed=false;
     int bladeType=0;//0=epee,1=foil
 
-    private TextView hzText,bladeBtn,audioBtn,beepBtn,slideToUnlockText,creditsText;
+    private TextView hzText,bladeBtn,audioBtn,beepBtn,slideToUnlockText,creditsText,btnStateText;
     private Button helpBtn,beepButton;
     private SeekBar hzSeek,slideToUnlockSlider;
     private Spanned githubLink;
@@ -66,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
         //assets on screen
         creditsText = (TextView)findViewById(R.id.creditsTextView);
+        btnStateText = (TextView)findViewById(R.id.button_state_text);
         hzText =(TextView)findViewById(R.id.hzTextView);
         hzSeek = (SeekBar) findViewById(R.id.hzSeekBar);
         slideToUnlockSlider = (SeekBar) findViewById(R.id.slideToUnlockSlider);
@@ -94,8 +98,9 @@ public class MainActivity extends AppCompatActivity {
         helpBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_DeviceDefault_Dialog_Alert);
                 builder.setCancelable(true);
+
                 builder.setTitle("Help:");
                 builder.setMessage(
                         "There are three buttons on the bottom of the screen. \n" +
@@ -151,7 +156,10 @@ public class MainActivity extends AppCompatActivity {
                     creditsText.setVisibility(View.VISIBLE);
                     helpBtn.setVisibility(View.VISIBLE);
                     slideToUnlockText.setText("<-- slide to lock screen -- ");
-                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
+                    slideToUnlockText.setTextColor(Color.WHITE);
+
+
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 }else{
                     hzSeek.setVisibility(View.INVISIBLE);
                     hzText.setVisibility(View.INVISIBLE);
@@ -161,7 +169,9 @@ public class MainActivity extends AppCompatActivity {
                     creditsText.setVisibility(View.INVISIBLE);
                     helpBtn.setVisibility((View.INVISIBLE));
                     slideToUnlockText.setText(" -- slide to unlock screen -->");
+                    slideToUnlockText.setTextColor(Color.DKGRAY);
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
                 }
             }
         });
@@ -226,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
                     //checks if device can support this feature
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
                         //device is not supported, bring up popup window to tell them!
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_DeviceDefault_Dialog_Alert);
                         builder.setCancelable(true);
                         builder.setTitle("Outdated Device!");
                         builder.setMessage("Unfortunately, your device is outdated so an alternative beep using your notification sound has been used instead. Please update to Android 6 or higher to continue using the tone.");
