@@ -103,16 +103,17 @@ public class MainActivity extends AppCompatActivity {
 
                 builder.setTitle("Help:");
                 builder.setMessage(
-                        "There are three buttons on the bottom of the screen. \n" +
+                        "Welcome to the fencing buzz-box emulator!\n\nThere are three buttons on the bottom of the screen. \n" +
                         " - The right button plays a test beep.\n" +
                         " - The middle button changes the audio output for the beep. \n" +
                         "    * Headphones mode will make the device send audio through the headphone jack. Please be aware that you must plug headphones into the passthrough port on the adapter to hear audio in this mode!\n" +
-                        "    * Speakers mode will force the device to send audio through the built in speakers. Please not that this is NOT COMPATIBLE with Android 4 and Android 5!\n" +
+                        "    * Speakers mode will force the device to send audio through the built in speakers. Please not that this is NOT fully compatible with Android 4 and 5!\n" +
                         " - The button on the left changes which blade is being used and will change the beep behavior accordingly.\n" +
                         "\n" +
                         "There are two sliders.\n" +
                         " - The top slider 'locks' the screen by removing all clickable buttons and preventing phone from sleeping.\n" +
-                        " - The bottom slider adjusts the tone of the beep.");
+                        " - The bottom slider adjusts the tone of the beep.\n\n"+
+                        "Please report any bugs to the app's Github page which you can reach by clicking the copyright date in the top left corner of the main screen.");
                 builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -120,8 +121,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 builder.show();
-
-
             }
         });
 
@@ -157,9 +156,9 @@ public class MainActivity extends AppCompatActivity {
                     helpBtn.setVisibility(View.VISIBLE);
                     slideToUnlockText.setText("<-- slide to lock screen -- ");
                     slideToUnlockText.setTextColor(Color.WHITE);
-
-
-                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    btnStateText.setVisibility(View.VISIBLE);
+                    btnStateText.setTextColor(Color.DKGRAY);
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
                 }else{
                     hzSeek.setVisibility(View.INVISIBLE);
                     hzText.setVisibility(View.INVISIBLE);
@@ -170,13 +169,11 @@ public class MainActivity extends AppCompatActivity {
                     helpBtn.setVisibility((View.INVISIBLE));
                     slideToUnlockText.setText(" -- slide to unlock screen -->");
                     slideToUnlockText.setTextColor(Color.DKGRAY);
+                    btnStateText.setVisibility(View.INVISIBLE);
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
                 }
             }
         });
-
-
 
         //for changing the tone pitch
         hzSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -206,9 +203,6 @@ public class MainActivity extends AppCompatActivity {
                     genTone();
                     playSound();
                 }
-
-
-
             }
         });
 
@@ -251,8 +245,6 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         headphonesOutput = !headphonesOutput;
                     }
-
-
                 } else {
                     // The toggle is disabled (headphones mode)
                     legacyBeep=false;
@@ -271,9 +263,9 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 genTone();
                 handler.post(new Runnable() {
-
                     public void run() {
-                        playSound();
+                        //commented out to prevent sound from randomly playing when screen state changes (ie rotation, locking, launching app)
+                        //playSound();
                     }
                 });
             }
@@ -292,15 +284,9 @@ public class MainActivity extends AppCompatActivity {
                 playBeep();
                 if (i==2)
                     break;
-
             }
-
-
         }
     }
-
-
-
 
     void genTone(){
         // fill out the array
@@ -317,7 +303,6 @@ public class MainActivity extends AppCompatActivity {
             // in 16 bit wav PCM, first byte is the low order byte
             generatedSnd[idx++] = (byte) (val & 0x00ff);
             generatedSnd[idx++] = (byte) ((val & 0xff00) >>> 8);
-
         }
     }
 
@@ -338,7 +323,6 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && headphonesOutput==false) {
             AudioDeviceInfo mAudioOutputDevice = findAudioDevice(AudioManager.GET_DEVICES_OUTPUTS, AudioDeviceInfo.TYPE_BUILTIN_SPEAKER);
             audioTrack.setPreferredDevice(mAudioOutputDevice);// NOT COMPATIBLE WITH ANDROID 4!
@@ -351,7 +335,6 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         audioTrack.release();
-
     }
 
     //finds the audio device
@@ -360,11 +343,9 @@ public class MainActivity extends AppCompatActivity {
             AudioManager manager = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
             AudioDeviceInfo[] adis = manager.getDevices(deviceFlag);
             for (AudioDeviceInfo adi : adis) {
-
                 if (adi.getType() == deviceType) {
                     return adi;
                 }
-
             }
         }
         return null;
@@ -386,7 +367,6 @@ public class MainActivity extends AppCompatActivity {
 
     //checks if button on blade is depressed (used for EPEE)
     public boolean 	onKeyUp(int keyCode, KeyEvent event) {
-
         if(keyCode == KeyEvent.KEYCODE_HEADSETHOOK){
             //displays button status as open
             TextView textViewMain = findViewById(R.id.button_state_text);
@@ -402,18 +382,14 @@ public class MainActivity extends AppCompatActivity {
 
     //makes phone beep notification LEGACY
     public void playBeep(){
-
         //https://stackoverflow.com/questions/2618182/how-to-play-ringtone-alarm-sound-in-android
         try{
-
-            //plays beep and vibrates phone
+            //gets notification sound then plays it.
             Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
             Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
 
             r.play();
-            //vibrateDevice();
             TimeUnit.MILLISECONDS.sleep(300);
-
             r.stop();
 
         }catch (Exception e){

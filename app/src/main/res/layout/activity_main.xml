@@ -21,12 +21,14 @@
         android:id="@+id/button_state_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginLeft="32dp"
+        android:layout_marginBottom="3dp"
         android:text="@string/button_state"
-        android:textSize="36sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:textColor="#505050"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toTopOf="@+id/hzTextView"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/beepButton"
@@ -63,6 +65,7 @@
         android:layout_marginRight="8dp"
         android:layout_marginBottom="16dp"
         android:background="#854B4B4B"
+        android:saveEnabled="true"
         android:text="@string/audiotogglebutton"
         android:textColor="#ADADAD"
         android:textOff="@string/headphones"
@@ -79,6 +82,7 @@
         android:layout_marginLeft="16dp"
         android:layout_marginBottom="16dp"
         android:background="#854B4B4B"
+        android:saveEnabled="true"
         android:text="@string/bladetogglebutton"
         android:textColor="#ADADAD"
         android:textOff="@string/p_e_mode"
@@ -112,6 +116,7 @@
         android:layout_marginBottom="16dp"
         android:max="3000"
         android:progress="1500"
+        android:saveEnabled="true"
         app:layout_constraintBottom_toTopOf="@+id/AudioOutputToggle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
