@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
@@ -36,14 +38,6 @@ import static android.view.View.KEEP_SCREEN_ON;
 
 public class MainActivity extends AppCompatActivity {
 
-    boolean epeeMode=false;
-    boolean headphonesOutput=true;
-    boolean legacyBeep=false;
-    boolean unlocked=true;
-    boolean soundPlayed=false;
-    boolean passed=false;
-    int bladeType=0;//0=epee,1=foil
-
     private TextView hzText,bladeBtn,audioBtn,beepBtn,slideToUnlockText,creditsText,btnStateText;
     private Button helpBtn,beepButton;
     private SeekBar hzSeek,slideToUnlockSlider;
@@ -55,6 +49,13 @@ public class MainActivity extends AppCompatActivity {
     private final double sample[] = new double[(int)numSamples];
     private double freqOfTone = 1500; // hz
     private int prevProgress=10;
+    private boolean epeeMode=false;
+    private boolean headphonesOutput=true;
+    private boolean legacyBeep=false;
+    private boolean unlocked=true;
+    private boolean soundPlayed=false;
+    private boolean passed=false;
+    private int oldProgress=10;
 
     private final byte generatedSnd[] = new byte[2 * (int)numSamples];
 
@@ -65,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
         //assets on screen
@@ -172,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                     btnStateText.setVisibility(View.INVISIBLE);
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 }
+                oldProgress=slideToUnlockSlider.getProgress();
             }
         });
 
@@ -191,6 +194,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+
 
             }
 
@@ -255,8 +259,62 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState){
+        super.onSaveInstanceState(outState);
+
+        oldProgress=slideToUnlockSlider.getProgress();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig){
+        super.onConfigurationChanged(newConfig);
+        oldProgress=slideToUnlockSlider.getProgress();
+
+    }
+    @Override
+    protected void onPause(){
+        super.onPause();
+        if(oldProgress==0){
+
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+
+        slideToUnlockSlider.setProgress(oldProgress);
+        if (oldProgress==0)
+            unlocked=false;
+        else
+            unlocked=true;
+
+        if (unlocked){
+            hzSeek.setVisibility(View.VISIBLE);
+            hzText.setVisibility(View.VISIBLE);
+            bladeBtn.setVisibility(View.VISIBLE);
+            audioBtn.setVisibility(View.VISIBLE);
+            beepBtn.setVisibility(View.VISIBLE);
+            creditsText.setVisibility(View.VISIBLE);
+            helpBtn.setVisibility(View.VISIBLE);
+            slideToUnlockText.setText("<-- slide to lock screen -- ");
+            slideToUnlockText.setTextColor(Color.WHITE);
+            btnStateText.setVisibility(View.VISIBLE);
+            btnStateText.setTextColor(Color.DKGRAY);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
+        }else{
+            hzSeek.setVisibility(View.INVISIBLE);
+            hzText.setVisibility(View.INVISIBLE);
+            bladeBtn.setVisibility(View.INVISIBLE);
+            audioBtn.setVisibility(View.INVISIBLE);
+            beepBtn.setVisibility(View.INVISIBLE);
+            creditsText.setVisibility(View.INVISIBLE);
+            helpBtn.setVisibility((View.INVISIBLE));
+            slideToUnlockText.setText(" -- slide to unlock screen -->");
+            slideToUnlockText.setTextColor(Color.DKGRAY);
+            btnStateText.setVisibility(View.INVISIBLE);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
 
         // Use a new tread as this can take a while
         final Thread thread = new Thread(new Runnable() {
