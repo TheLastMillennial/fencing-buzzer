@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean unlocked=true;
     private boolean soundPlayed=false;
     private boolean passed=false;
-    private int oldProgress=10;
 
     private final byte generatedSnd[] = new byte[2 * (int)numSamples];
 
@@ -100,29 +99,18 @@ public class MainActivity extends AppCompatActivity {
         helpBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_DeviceDefault_Dialog_Alert);
-                builder.setCancelable(true);
-
-                builder.setTitle("Help:");
-                builder.setMessage(
-                        "Welcome to the fencing buzz-box emulator!\n\nThere are three buttons on the bottom of the screen. \n" +
+                displayAlert("Help:","Welcome to the fencing buzz-box emulator!\n\nThere are three buttons on the bottom of the screen. \n" +
                         " - The right button plays a test beep.\n" +
                         " - The middle button changes the audio output for the beep. \n" +
-                        "    * Headphones mode will make the device send audio through the headphone jack. Please be aware that you must plug headphones into the passthrough port on the adapter to hear audio in this mode!\n" +
-                        "    * Speakers mode will force the device to send audio through the built in speakers. Please not that this is NOT fully compatible with Android 4 and 5!\n" +
-                        " - The button on the left changes which blade is being used and will change the beep behavior accordingly.\n" +
+                        "    * Headphones mode will make the device send audio through the headphone jack. Please be aware that you must use a TRRS audio splitter to hear audio in this mode!\n" +
+                        "    * Speakers mode will force the device to send audio through the built in speakers. Please note this feature will use your notification sound if you're running Android 4 or 5!\n" +
+                        " - The button on the left changes which blade is being used and will change the beep behavior accordingly. \n" +
                         "\n" +
                         "There are two sliders.\n" +
                         " - The top slider 'locks' the screen by removing all clickable buttons and preventing phone from sleeping.\n" +
                         " - The bottom slider adjusts the tone of the beep.\n\n"+
                         "Please report any bugs to the app's Github page which you can reach by clicking the copyright date in the top left corner of the main screen.");
-                builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
+
             }
         });
 
@@ -174,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
                     btnStateText.setVisibility(View.INVISIBLE);
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 }
-                oldProgress=slideToUnlockSlider.getProgress();
             }
         });
 
@@ -194,7 +181,6 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
 
             }
 
@@ -233,18 +219,9 @@ public class MainActivity extends AppCompatActivity {
                     // The toggle is enabled (speakers mode)
                     //checks if device can support this feature
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                        //device is not supported, bring up popup window to tell them!
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_DeviceDefault_Dialog_Alert);
-                        builder.setCancelable(true);
-                        builder.setTitle("Outdated Device!");
-                        builder.setMessage("Unfortunately, your device is outdated so an alternative beep using your notification sound has been used instead. Please update to Android 6 or higher to continue using the tone.");
-                        builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        });
-                        builder.show();
+                        //device is not supported, bring up popup window to tell them!-----------------
+                        displayAlert("Outdated Device!","Unfortunately, your device is outdated so an alternative beep using your notification sound has been used instead. " +
+                                "Please update to Android 6 or higher to continue using the tone.");
                         legacyBeep = true;
                     } else {
                         headphonesOutput = !headphonesOutput;
@@ -258,64 +235,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState){
-        super.onSaveInstanceState(outState);
 
-        oldProgress=slideToUnlockSlider.getProgress();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig){
-        super.onConfigurationChanged(newConfig);
-        oldProgress=slideToUnlockSlider.getProgress();
-
-    }
-    @Override
-    protected void onPause(){
-        super.onPause();
-        if(oldProgress==0){
-
-        }
-    }
 
     @Override
     protected void onResume() {
         super.onResume();
-
-        slideToUnlockSlider.setProgress(oldProgress);
-        if (oldProgress==0)
-            unlocked=false;
-        else
-            unlocked=true;
-
-        if (unlocked){
-            hzSeek.setVisibility(View.VISIBLE);
-            hzText.setVisibility(View.VISIBLE);
-            bladeBtn.setVisibility(View.VISIBLE);
-            audioBtn.setVisibility(View.VISIBLE);
-            beepBtn.setVisibility(View.VISIBLE);
-            creditsText.setVisibility(View.VISIBLE);
-            helpBtn.setVisibility(View.VISIBLE);
-            slideToUnlockText.setText("<-- slide to lock screen -- ");
-            slideToUnlockText.setTextColor(Color.WHITE);
-            btnStateText.setVisibility(View.VISIBLE);
-            btnStateText.setTextColor(Color.DKGRAY);
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
-        }else{
-            hzSeek.setVisibility(View.INVISIBLE);
-            hzText.setVisibility(View.INVISIBLE);
-            bladeBtn.setVisibility(View.INVISIBLE);
-            audioBtn.setVisibility(View.INVISIBLE);
-            beepBtn.setVisibility(View.INVISIBLE);
-            creditsText.setVisibility(View.INVISIBLE);
-            helpBtn.setVisibility((View.INVISIBLE));
-            slideToUnlockText.setText(" -- slide to unlock screen -->");
-            slideToUnlockText.setTextColor(Color.DKGRAY);
-            btnStateText.setVisibility(View.INVISIBLE);
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        }
-
         // Use a new tread as this can take a while
         final Thread thread = new Thread(new Runnable() {
             public void run() {
@@ -332,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //makes tone play 15 times
-    public void loopSound(){
+    protected void loopSound(){
         for (int i=0;i<5;i++) {
             //if it's a modern device, play tone, otherwise use notification sound
             if(!legacyBeep) {
@@ -454,5 +378,19 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
+    }
+
+    public void displayAlert(String title, String message){
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_DeviceDefault_Dialog_Alert);
+        builder.setCancelable(true);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.show();
     }
 }
