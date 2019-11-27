@@ -4,12 +4,26 @@ Compatible with Android 4 and newer.
 
 This project emulates a buzz box for épée and foil. 
 
+To create the adapter:
+ - Navigate to the Hardware folder
+ - Refer to PartsList.txt for the list of parts needed
+ - Refer to FencingCircuitSchematic4.png for the circuit diagram
+ - Refer to FinishedProduct.jpg for the finished product
+
+To install the app:
+ - Open Settings
+ - Navigate to 'Security'
+ - Find 'Unknown Sources' or 'Install Unknown Apps'
+   * On old OSes, just tap on the switch to enable the option
+   * On new OSes, enable the feature on the app you will try to install from (i.e. Files or Chrome)
+ - Navigate to the fencingbuzzer.apk file and install it.
+
 To use the app:
 There are three buttons. 
  - The right button plays a test beep.
  - The middle button changes the audio output for the beep. 
-    * Headphones mode will make the device send audio through the headphone jack. Please be aware that you must plug headphones into the passthrough port on the adapter to hear audio in this mode!
-    * Speakers mode will force the device to send audio through the built in speakers. Please not that this is NOT COMPATIBLE with Android 4 and Android 5!
+    * Headphones mode will make the device send audio through the headphone jack. Please be aware that you must use a TRRS headphone jack splitter to hear audio in this mode!
+    * Speakers mode will force the device to send audio through the built in speakers. Please note: on Android 4 & 5 your notification sound will be used due to compatibility issues.
  - The button on the left changes which blade is being used and will change the beep behavior accordingly.
 
 There are two sliders.
