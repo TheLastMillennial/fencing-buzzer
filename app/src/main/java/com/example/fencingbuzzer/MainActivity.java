@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.media.AudioDeviceInfo;
@@ -47,16 +48,21 @@ public class MainActivity extends AppCompatActivity {
     private final int sampleRate = 8000;
     private final double numSamples = duration * sampleRate;
     private final double sample[] = new double[(int)numSamples];
+
+    private final byte generatedSnd[] = new byte[2 * (int)numSamples];
     private double freqOfTone = 1500; // hz
     private int prevProgress=10;
+    private int audioQuality=0;
     private boolean epeeMode=false;
     private boolean headphonesOutput=true;
     private boolean legacyBeep=false;
     private boolean unlocked=true;
     private boolean soundPlayed=false;
     private boolean passed=false;
+    private boolean hasLowLatencyFeature;
+    private boolean hasProFeature;
+    private boolean hasOptimalSR;
 
-    private final byte generatedSnd[] = new byte[2 * (int)numSamples];
 
     Handler handler = new Handler();
 
@@ -67,6 +73,26 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+
+        //gets audio stats
+        hasLowLatencyFeature =
+                getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY);
+        if(hasLowLatencyFeature){
+            displayAlert("Low Latency?", "True");
+            audioQuality++;
+        }else{
+            displayAlert("Low Latency?", "False");
+        }
+
+        hasProFeature =
+                getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_PRO);
+        if(hasProFeature){
+            displayAlert("Pro Feature?", "True");
+            audioQuality++;
+        }else{
+            displayAlert("Pro Feature?", "False");
+        }
+
 
         //assets on screen
         creditsText = (TextView)findViewById(R.id.creditsTextView);
@@ -270,6 +296,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //gets optimal sample rate for the phone, if provided. UNUSED/BROKEN
+    protected int getOptimalSR(){
+        AudioManager adm = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        String sampleRateStr = null;
+        int sampleRate=0;
+        hasOptimalSR=false;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            sampleRateStr = adm.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+            sampleRate = Integer.parseInt(sampleRateStr);
+            hasOptimalSR=true;
+            audioQuality++;
+        }
+
+        if(hasOptimalSR){
+            displayAlert("Optimal SR?","True");
+        }else{
+            displayAlert("Optimal SR?", "False or Incompatible");
+        }
+
+        if (sampleRate == 0) {
+            sampleRate = 8000; // Use a default value if property not found
+        }
+        return sampleRate;
+    }
+
     void genTone(){
         // fill out the array
         for (int i = 0; i < numSamples; ++i) {
@@ -290,33 +341,72 @@ public class MainActivity extends AppCompatActivity {
 
     //plays a tone
     void playSound(){
+        //if OS is Android O ro greater, set performance to low latency
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            final AudioTrack audioTrack = new AudioTrack(
+                    AudioManager.STREAM_NOTIFICATION,
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    generatedSnd.length,
+                    AudioTrack.MODE_STATIC,
+                    AudioTrack.PERFORMANCE_MODE_LOW_LATENCY);
 
-        final AudioTrack audioTrack = new AudioTrack(
-                AudioManager.STREAM_MUSIC,
-                sampleRate,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                generatedSnd.length,
-                AudioTrack.MODE_STATIC);
-        try{
-            audioTrack.write(generatedSnd, 0, generatedSnd.length);
+            try{
+                audioTrack.write(generatedSnd, 0, generatedSnd.length);
 
-        }catch (Exception e){
-            e.printStackTrace();
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && headphonesOutput==false) {
+                AudioDeviceInfo mAudioOutputDevice = findAudioDevice(AudioManager.GET_DEVICES_OUTPUTS, AudioDeviceInfo.TYPE_BUILTIN_SPEAKER);
+                audioTrack.setPreferredDevice(mAudioOutputDevice);// NOT COMPATIBLE WITH ANDROID 4!
+            }
+
+            try {
+                audioTrack.play();
+                TimeUnit.MILLISECONDS.sleep((long) (duration * 1000 + 50));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            audioTrack.release();
+
+        }else{
+            final AudioTrack audioTrack = new AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    generatedSnd.length,
+                    AudioTrack.MODE_STATIC
+                    );
+
+            try{
+                audioTrack.write(generatedSnd, 0, generatedSnd.length);
+
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && headphonesOutput==false) {
+                AudioDeviceInfo mAudioOutputDevice = findAudioDevice(AudioManager.GET_DEVICES_OUTPUTS, AudioDeviceInfo.TYPE_BUILTIN_SPEAKER);
+                audioTrack.setPreferredDevice(mAudioOutputDevice);// NOT COMPATIBLE WITH ANDROID 4!
+            }
+
+            try {
+                audioTrack.play();
+                TimeUnit.MILLISECONDS.sleep((long) (duration * 1000 + 50));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            audioTrack.release();
+
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && headphonesOutput==false) {
-            AudioDeviceInfo mAudioOutputDevice = findAudioDevice(AudioManager.GET_DEVICES_OUTPUTS, AudioDeviceInfo.TYPE_BUILTIN_SPEAKER);
-            audioTrack.setPreferredDevice(mAudioOutputDevice);// NOT COMPATIBLE WITH ANDROID 4!
-        }
 
-        try {
-            audioTrack.play();
-            TimeUnit.MILLISECONDS.sleep((long) (duration * 1000 + 50));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        audioTrack.release();
     }
 
     //finds the audio device
