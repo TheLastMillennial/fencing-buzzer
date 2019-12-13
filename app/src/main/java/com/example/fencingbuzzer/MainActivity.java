@@ -5,6 +5,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
@@ -36,14 +39,6 @@ import static android.view.View.KEEP_SCREEN_ON;
 
 public class MainActivity extends AppCompatActivity {
 
-    boolean epeeMode=false;
-    boolean headphonesOutput=true;
-    boolean legacyBeep=false;
-    boolean unlocked=true;
-    boolean soundPlayed=false;
-    boolean passed=false;
-    int bladeType=0;//0=epee,1=foil
-
     private TextView hzText,bladeBtn,audioBtn,beepBtn,slideToUnlockText,creditsText,btnStateText;
     private Button helpBtn,beepButton;
     private SeekBar hzSeek,slideToUnlockSlider;
@@ -53,10 +48,21 @@ public class MainActivity extends AppCompatActivity {
     private final int sampleRate = 8000;
     private final double numSamples = duration * sampleRate;
     private final double sample[] = new double[(int)numSamples];
-    private double freqOfTone = 1500; // hz
-    private int prevProgress=10;
 
     private final byte generatedSnd[] = new byte[2 * (int)numSamples];
+    private double freqOfTone = 1500; // hz
+    private int prevProgress=10;
+    private int audioQuality=0;
+    private boolean epeeMode=false;
+    private boolean headphonesOutput=true;
+    private boolean legacyBeep=false;
+    private boolean unlocked=true;
+    private boolean soundPlayed=false;
+    private boolean passed=false;
+    private boolean hasLowLatencyFeature;
+    private boolean hasProFeature;
+    private boolean hasOptimalSR;
+
 
     Handler handler = new Handler();
 
@@ -65,7 +71,28 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
+
+        //gets audio stats
+        hasLowLatencyFeature =
+                getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY);
+        if(hasLowLatencyFeature){
+            displayAlert("Low Latency?", "True");
+            audioQuality++;
+        }else{
+            displayAlert("Low Latency?", "False");
+        }
+
+        hasProFeature =
+                getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_PRO);
+        if(hasProFeature){
+            displayAlert("Pro Feature?", "True");
+            audioQuality++;
+        }else{
+            displayAlert("Pro Feature?", "False");
+        }
+
 
         //assets on screen
         creditsText = (TextView)findViewById(R.id.creditsTextView);
@@ -98,29 +125,18 @@ public class MainActivity extends AppCompatActivity {
         helpBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_DeviceDefault_Dialog_Alert);
-                builder.setCancelable(true);
-
-                builder.setTitle("Help:");
-                builder.setMessage(
-                        "Welcome to the fencing buzz-box emulator!\n\nThere are three buttons on the bottom of the screen. \n" +
+                displayAlert("Help:","Welcome to the fencing buzz-box emulator!\n\nThere are three buttons on the bottom of the screen. \n" +
                         " - The right button plays a test beep.\n" +
                         " - The middle button changes the audio output for the beep. \n" +
-                        "    * Headphones mode will make the device send audio through the headphone jack. Please be aware that you must plug headphones into the passthrough port on the adapter to hear audio in this mode!\n" +
-                        "    * Speakers mode will force the device to send audio through the built in speakers. Please not that this is NOT fully compatible with Android 4 and 5!\n" +
-                        " - The button on the left changes which blade is being used and will change the beep behavior accordingly.\n" +
+                        "    * Headphones mode will make the device send audio through the headphone jack. Please be aware that you must use a TRRS audio splitter to hear audio in this mode!\n" +
+                        "    * Speakers mode will force the device to send audio through the built in speakers. Please note this feature will use your notification sound if you're running Android 4 or 5!\n" +
+                        " - The button on the left changes which blade is being used and will change the beep behavior accordingly. \n" +
                         "\n" +
                         "There are two sliders.\n" +
                         " - The top slider 'locks' the screen by removing all clickable buttons and preventing phone from sleeping.\n" +
                         " - The bottom slider adjusts the tone of the beep.\n\n"+
                         "Please report any bugs to the app's Github page which you can reach by clicking the copyright date in the top left corner of the main screen.");
-                builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
+
             }
         });
 
@@ -229,18 +245,9 @@ public class MainActivity extends AppCompatActivity {
                     // The toggle is enabled (speakers mode)
                     //checks if device can support this feature
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                        //device is not supported, bring up popup window to tell them!
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_DeviceDefault_Dialog_Alert);
-                        builder.setCancelable(true);
-                        builder.setTitle("Outdated Device!");
-                        builder.setMessage("Unfortunately, your device is outdated so an alternative beep using your notification sound has been used instead. Please update to Android 6 or higher to continue using the tone.");
-                        builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        });
-                        builder.show();
+                        //device is not supported, bring up popup window to tell them!-----------------
+                        displayAlert("Outdated Device!","Unfortunately, your device is outdated so an alternative beep using your notification sound has been used instead. " +
+                                "Please update to Android 6 or higher to continue using the tone.");
                         legacyBeep = true;
                     } else {
                         headphonesOutput = !headphonesOutput;
@@ -254,10 +261,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
+
     @Override
     protected void onResume() {
         super.onResume();
-
         // Use a new tread as this can take a while
         final Thread thread = new Thread(new Runnable() {
             public void run() {
@@ -274,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //makes tone play 15 times
-    public void loopSound(){
+    protected void loopSound(){
         for (int i=0;i<5;i++) {
             //if it's a modern device, play tone, otherwise use notification sound
             if(!legacyBeep) {
@@ -286,6 +294,31 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
         }
+    }
+
+    //gets optimal sample rate for the phone, if provided. UNUSED/BROKEN
+    protected int getOptimalSR(){
+        AudioManager adm = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        String sampleRateStr = null;
+        int sampleRate=0;
+        hasOptimalSR=false;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            sampleRateStr = adm.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+            sampleRate = Integer.parseInt(sampleRateStr);
+            hasOptimalSR=true;
+            audioQuality++;
+        }
+
+        if(hasOptimalSR){
+            displayAlert("Optimal SR?","True");
+        }else{
+            displayAlert("Optimal SR?", "False or Incompatible");
+        }
+
+        if (sampleRate == 0) {
+            sampleRate = 8000; // Use a default value if property not found
+        }
+        return sampleRate;
     }
 
     void genTone(){
@@ -308,33 +341,72 @@ public class MainActivity extends AppCompatActivity {
 
     //plays a tone
     void playSound(){
+        //if OS is Android O ro greater, set performance to low latency
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            final AudioTrack audioTrack = new AudioTrack(
+                    AudioManager.STREAM_NOTIFICATION,
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    generatedSnd.length,
+                    AudioTrack.MODE_STATIC,
+                    AudioTrack.PERFORMANCE_MODE_LOW_LATENCY);
 
-        final AudioTrack audioTrack = new AudioTrack(
-                AudioManager.STREAM_MUSIC,
-                sampleRate,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                generatedSnd.length,
-                AudioTrack.MODE_STATIC);
-        try{
-            audioTrack.write(generatedSnd, 0, generatedSnd.length);
+            try{
+                audioTrack.write(generatedSnd, 0, generatedSnd.length);
 
-        }catch (Exception e){
-            e.printStackTrace();
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && headphonesOutput==false) {
+                AudioDeviceInfo mAudioOutputDevice = findAudioDevice(AudioManager.GET_DEVICES_OUTPUTS, AudioDeviceInfo.TYPE_BUILTIN_SPEAKER);
+                audioTrack.setPreferredDevice(mAudioOutputDevice);// NOT COMPATIBLE WITH ANDROID 4!
+            }
+
+            try {
+                audioTrack.play();
+                TimeUnit.MILLISECONDS.sleep((long) (duration * 1000 + 50));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            audioTrack.release();
+
+        }else{
+            final AudioTrack audioTrack = new AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    generatedSnd.length,
+                    AudioTrack.MODE_STATIC
+                    );
+
+            try{
+                audioTrack.write(generatedSnd, 0, generatedSnd.length);
+
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && headphonesOutput==false) {
+                AudioDeviceInfo mAudioOutputDevice = findAudioDevice(AudioManager.GET_DEVICES_OUTPUTS, AudioDeviceInfo.TYPE_BUILTIN_SPEAKER);
+                audioTrack.setPreferredDevice(mAudioOutputDevice);// NOT COMPATIBLE WITH ANDROID 4!
+            }
+
+            try {
+                audioTrack.play();
+                TimeUnit.MILLISECONDS.sleep((long) (duration * 1000 + 50));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            audioTrack.release();
+
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && headphonesOutput==false) {
-            AudioDeviceInfo mAudioOutputDevice = findAudioDevice(AudioManager.GET_DEVICES_OUTPUTS, AudioDeviceInfo.TYPE_BUILTIN_SPEAKER);
-            audioTrack.setPreferredDevice(mAudioOutputDevice);// NOT COMPATIBLE WITH ANDROID 4!
-        }
 
-        try {
-            audioTrack.play();
-            TimeUnit.MILLISECONDS.sleep((long) (duration * 1000 + 50));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        audioTrack.release();
     }
 
     //finds the audio device
@@ -396,5 +468,19 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
+    }
+
+    public void displayAlert(String title, String message){
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_DeviceDefault_Dialog_Alert);
+        builder.setCancelable(true);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.show();
     }
 }
