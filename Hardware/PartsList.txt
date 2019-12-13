@@ -1,0 +1,12 @@
+For ONE adapter:
+1x TRRS headphone jack 
+2x 220 ohm resistor
+1x 2.2k ohm resistor
+4x Wire
+2x 1/4 inch female banana plugs
+1x Soldering iron
+1x Solder
+
+OPTIONAL:
+2x Wire crimps
+1x Roll of electrical tape
