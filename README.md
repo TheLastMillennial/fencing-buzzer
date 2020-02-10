@@ -1,5 +1,5 @@
 # Fencing Buzzer Box
-#### 2019 : Brian K. & Erik F.
+#### 2020 : Brian K. & Erik F.
 #### Compatible with Android 4 and newer.
 
 This project emulates a buzz box for épée and foil. 
@@ -32,7 +32,7 @@ There are two sliders.
 
 
 ### Changelog:
-v1.0.0 (12/02/2019)
+v1.0.0 (02/10/2020)
 Initial release
 
 v0.0.1 (11/08/2019)
